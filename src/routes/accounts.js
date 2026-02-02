@@ -10,7 +10,7 @@ const requirePermission = require('../middleware/permission');
  * @swagger
  * tags:
  *   - name: Accounts
- *     description: Employee account management (supports UUID and emp_id)
+ *     description: Employee account management
  */
 
 /**
@@ -158,34 +158,6 @@ router.get(
 
 /**
  * @swagger
- * /accounts/emp/{empId}:
- *   get:
- *     summary: Get account by employee ID (emp_id)
- *     tags: [Accounts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: empId
- *         required: true
- *         schema:
- *           type: string
- *         example: EMP042
- *     responses:
- *       200: { description: Account found }
- *       403: { description: Forbidden }
- *       404: { description: Account not found }
- */
-router.get(
-  '/emp/:empId',
-  authenticate,
-  requirePermission(['accounts:read', 'accounts:read_own', 'accounts:read:own-dept']),
-  [param('empId').notEmpty().isLength({ min: 3, max: 50 }).matches(/^[A-Z0-9\-_]+$/i), validate],
-  controller.getAccount
-);
-
-/**
- * @swagger
  * /accounts/{id}:
  *   put:
  *     summary: Update account by UUID
@@ -243,48 +215,6 @@ router.put(
 
 /**
  * @swagger
- * /accounts/emp/{empId}:
- *   put:
- *     summary: Update account by emp_id
- *     tags: [Accounts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: empId
- *         required: true
- *         schema: { type: string }
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               emp_id: { type: string }
- *               fullname: { type: string }
- *               username: { type: string }
- *               email: { type: string }
- *               password: { type: string }
- *               department_id: { type: string, format: uuid }
- *               role_id: { type: string, format: uuid }
- *               status: { type: string, enum: [active, disabled] }
- *     responses:
- *       200: { description: Account updated }
- */
-router.put(
-  '/emp/:empId',
-  authenticate,
-  requirePermission(['accounts:update', 'accounts:update_own', 'accounts:update:own-dept']),
-  [
-    param('empId').notEmpty().isLength({ min: 3, max: 50 }).matches(/^[A-Z0-9\-_]+$/i),
-    body('emp_id').optional().isLength({ min: 3, max: 50 }).matches(/^[A-Z0-9\-_]+$/i),
-    validate
-  ],
-  controller.updateAccount
-);
-
-/**
- * @swagger
  * /accounts/{id}/disable:
  *   patch:
  *     summary: Disable account by UUID
@@ -311,32 +241,6 @@ router.patch(
 
 /**
  * @swagger
- * /accounts/emp/{empId}/disable:
- *   patch:
- *     summary: Disable account by emp_id
- *     tags: [Accounts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: empId
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200: { description: Account disabled }
- *       403: { description: Forbidden }
- *       404: { description: Account not found }
- */
-router.patch(
-  '/emp/:empId/disable',
-  authenticate,
-  requirePermission(['accounts:disable', 'accounts:disable:own-dept']),
-  [param('empId').notEmpty().matches(/^[A-Z0-9\-_]+$/i), validate],
-  controller.disableAccount
-);
-
-/**
- * @swagger
  * /accounts/{id}:
  *   delete:
  *     summary: Permanently delete account by UUID
@@ -358,32 +262,6 @@ router.delete(
   authenticate,
   requirePermission(['accounts:delete']),
   [param('id').isUUID(4), validate],
-  controller.deleteAccount
-);
-
-/**
- * @swagger
- * /accounts/emp/{empId}:
- *   delete:
- *     summary: Permanently delete account by emp_id
- *     tags: [Accounts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: empId
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       204: { description: Account deleted }
- *       403: { description: Forbidden }
- *       404: { description: Account not found }
- */
-router.delete(
-  '/emp/:empId',
-  authenticate,
-  requirePermission(['accounts:delete']),
-  [param('empId').notEmpty().matches(/^[A-Z0-9\-_]+$/i), validate],
   controller.deleteAccount
 );
 
