@@ -1,4 +1,5 @@
-const db = require('../db');
+// src/services/departmentService.js
+const repo = require('../repo/departmentRepo');
 
 async function createDepartment(comp_code, { department_name, description, status = 'active' }) {
   if (!comp_code?.trim()) {
@@ -11,77 +12,36 @@ async function createDepartment(comp_code, { department_name, description, statu
   const data = {
     department_name: department_name.trim(),
     description: description?.trim() || null,
-    status
+    status,
   };
 
-  const result = await db.tInsert('departments', data, comp_code.trim().toUpperCase(), '*');
-  return result.rows[0];
+  return repo.createDepartment(comp_code.trim().toUpperCase(), data);
 }
 
 async function getAllDepartments(comp_code) {
-  const q = `
-    SELECT department_id, department_name, description, status, created_at, updated_at, comp_code
-    FROM departments
-    ORDER BY department_name ASC
-  `;
-  const result = await db.tQuery(q, [], comp_code);
-  return result.rows;
+  return repo.getAllDepartments(comp_code);
 }
 
 async function getDepartmentById(comp_code, id) {
-  const q = `SELECT department_id, department_name, description, status, created_at, updated_at, comp_code
-             FROM departments WHERE department_id = $1`;
-  const result = await db.tQuery(q, [id], comp_code);
-  return result.rows[0] || null;
+  return repo.getDepartmentById(comp_code, id);
 }
 
 async function updateDepartment(comp_code, id, updates) {
-  const fields = [];
-  const values = [];
-  let idx = 1;
-
-  if (updates.department_name !== undefined) {
-    fields.push(`department_name = $${idx++}`);
-    values.push(updates.department_name.trim());
-  }
-  if (updates.description !== undefined) {
-    fields.push(`description = $${idx++}`);
-    values.push(updates.description?.trim() || null);
-  }
-  if (updates.status !== undefined) {
-    fields.push(`status = $${idx++}`);
-    values.push(updates.status);
-  }
-
-  if (fields.length === 0) throw { status: 400, message: 'No fields to update' };
-
-  values.push(id);
-  const q = `
-    UPDATE departments 
-    SET ${fields.join(', ')}, updated_at = now()
-    WHERE department_id = $${idx}
-    RETURNING department_id, department_name, description, status, created_at, updated_at, comp_code
-  `;
-
-  const result = await db.tQuery(q, values, comp_code);
-  return result.rowCount === 0 ? null : result.rows[0];
+  // You can add extra business rules here in the future (e.g. prevent changing name if used, etc.)
+  return repo.updateDepartment(comp_code, id, updates);
 }
 
 async function updateDepartmentStatus(comp_code, id, status) {
   if (!['active', 'inactive'].includes(status)) {
-    throw { status: 400, message: 'Invalid status' };
+    throw { status: 400, message: 'Invalid status. Must be "active" or "inactive"' };
   }
-  const q = `UPDATE departments SET status = $1, updated_at = now()
-             WHERE department_id = $2
-             RETURNING department_id, department_name, description, status, created_at, updated_at, comp_code`;
-  const result = await db.tQuery(q, [status, id], comp_code);
-  return result.rows[0] || null;
+
+  return repo.updateDepartmentStatus(comp_code, id, status);
 }
 
 async function deleteDepartment(comp_code, id) {
-  const q = `DELETE FROM departments WHERE department_id = $1`;
-  const result = await db.tQuery(q, [id], comp_code);
-  return result.rowCount > 0;
+  // You can add checks here later (e.g. "cannot delete if has employees")
+  return repo.deleteDepartment(comp_code, id);
 }
 
 module.exports = {
@@ -90,5 +50,5 @@ module.exports = {
   getDepartmentById,
   updateDepartment,
   updateDepartmentStatus,
-  deleteDepartment
+  deleteDepartment,
 };
