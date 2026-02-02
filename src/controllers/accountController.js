@@ -1,11 +1,13 @@
 const db = require('../db');
 const accountService = require('../services/accountService');
+const { getAccountCompanyCode } = require('../repo/accountRepo');
 
+// In accountController.js - createAccount
 async function createAccount(req, res, next) {
   try {
+    console.log('[createAccount] Starting with body:', req.body); // ← add
     let comp_code = req.user.comp_code;
 
-    // SUPER_ADMIN can create in any company
     if (req.user.role_name === 'SUPER_ADMIN' && req.body.comp_code) {
       comp_code = req.body.comp_code.trim().toUpperCase();
     }
@@ -13,6 +15,7 @@ async function createAccount(req, res, next) {
     const account = await accountService.createAccount(comp_code, req.body);
     res.status(201).json(account);
   } catch (err) {
+    console.error('[createAccount] Failed:', err); // ← improved
     next(err);
   }
 }
@@ -54,9 +57,9 @@ async function getAccount(req, res, next) {
     let comp_code = req.user.comp_code;
 
     if (req.user.role_name === 'SUPER_ADMIN') {
-      const lookup = await db.rawQuery('SELECT comp_code FROM accounts WHERE id = $1', [id]);
-      if (lookup.rowCount === 0) return res.status(404).json({ error: 'Account not found' });
-      comp_code = lookup.rows[0].comp_code;
+      const foundCompCode = await getAccountCompanyCode(id);
+      if (!foundCompCode) return res.status(404).json({ error: 'Account not found' });
+      comp_code = foundCompCode;
     }
 
     const account = await accountService.getAccountById(comp_code, id);
@@ -73,9 +76,9 @@ async function updateAccount(req, res, next) {
     let comp_code = req.user.comp_code;
 
     if (req.user.role_name === 'SUPER_ADMIN') {
-      const lookup = await db.rawQuery('SELECT comp_code FROM accounts WHERE id = $1', [id]);
-      if (lookup.rowCount === 0) return res.status(404).json({ error: 'Account not found' });
-      comp_code = lookup.rows[0].comp_code;
+      const foundCompCode = await getAccountCompanyCode(id);
+      if (!foundCompCode) return res.status(404).json({ error: 'Account not found' });
+      comp_code = foundCompCode;
     }
 
     const account = await accountService.updateAccount(comp_code, id, req.body);
@@ -92,9 +95,9 @@ async function disableAccount(req, res, next) {
     let comp_code = req.user.comp_code;
 
     if (req.user.role_name === 'SUPER_ADMIN') {
-      const lookup = await db.rawQuery('SELECT comp_code FROM accounts WHERE id = $1', [id]);
-      if (lookup.rowCount === 0) return res.status(404).json({ error: 'Account not found' });
-      comp_code = lookup.rows[0].comp_code;
+      const foundCompCode = await getAccountCompanyCode(id);
+      if (!foundCompCode) return res.status(404).json({ error: 'Account not found' });
+      comp_code = foundCompCode;
     }
 
     const account = await accountService.disableAccount(comp_code, id);
@@ -111,9 +114,9 @@ async function deleteAccount(req, res, next) {
     let comp_code = req.user.comp_code;
 
     if (req.user.role_name === 'SUPER_ADMIN') {
-      const lookup = await db.rawQuery('SELECT comp_code FROM accounts WHERE id = $1', [id]);
-      if (lookup.rowCount === 0) return res.status(404).json({ error: 'Account not found' });
-      comp_code = lookup.rows[0].comp_code;
+      const foundCompCode = await getAccountCompanyCode(id);
+      if (!foundCompCode) return res.status(404).json({ error: 'Account not found' });
+      comp_code = foundCompCode;
     }
 
     const deleted = await accountService.deleteAccount(comp_code, id);
